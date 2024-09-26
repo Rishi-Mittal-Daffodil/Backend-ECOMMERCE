@@ -6,15 +6,15 @@ import { User } from "../models/user.model.js";
 const verifyToken = asyncHandler(async (req, _ , next) => {
   try {
     const token =
-      req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+      req.cookies?.resetToken || req.header("Authorization")?.replace("Bearer ", "");
     console.log(token);
 
     if (!token) throw new ApiError(401, "unauthorized request");
 
-    const decodeToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const decodeToken = jwt.verify(token, process.env.RESET_TOKEN_SECRET);
 
     const user = await User.findById(decodeToken?._id).select(
-      "-password -refreshToken"
+      "-password -resetToken"
     );
 
     if (!user) throw new ApiError("user is not valid");
@@ -22,7 +22,7 @@ const verifyToken = asyncHandler(async (req, _ , next) => {
     req.user = user;
     next();
   } catch (error) {
-    throw new ApiError(401, "invalid access Token");
+    throw new ApiError(401, error);
   }
 });
 
