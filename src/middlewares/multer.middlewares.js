@@ -10,16 +10,6 @@ const storage = multer.diskStorage({
 });
 
 
-
-// const fileFilterVideo = (req, file, cb) => {
-//   if(file.mimetype === 'video/mp4'){
-//       cb(null,true);
-//   }else{
-//       cb({message: 'Unsupported File Format'}, false)
-//   }
-// };
-
-
 const upload = multer({ storage: storage });
 
 export { upload };
