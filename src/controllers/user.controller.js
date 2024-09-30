@@ -23,20 +23,19 @@ const generateRefreshToken = async (userId) => {
 const registerUserRequest = asyncHandler(async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
     if (firstName === "") throw new ApiError(400, "Please Enter firstName");
-    else if (lastName === "") throw new ApiError(400, "Please enter lastName");
     else if (email === "") throw new ApiError(400, "Please enter email");
     else if (password === "") throw new ApiError(400, "please enter password");
 
     const existedUser = await User.findOne({ email });
-    if (existedUser)
-        new ApiResponse(200, {}, "user with this email already exists");
+    const deletedUserFromUserRequest =  await UserRequest.deleteMany({email:email})
+    if (existedUser) new ApiResponse(200, {}, "user with this email already exists");
 
     const otp = await sendOTP(email);
     if (!otp) throw new ApiError(401, "Error occure while sending otp");
 
     const user = await UserRequest.create({
         firstName,
-        lastName,
+        lastName : lastName || "",
         email: email,
         password,
         otp: otp,
@@ -96,7 +95,7 @@ const sendOTP = async (email) => {
 
 const otpverification = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
-    if (!email || !otp)
+    if (!email || !otp )
         throw new ApiError(400, "please enter valid otp Or email ");
     try {
         console.log(email);
@@ -112,7 +111,7 @@ const otpverification = asyncHandler(async (req, res) => {
 
         const originalUser = await User.create({
             firstName,
-            lastName,
+            lastName : lastName || "",
             email,
             password,
         });
