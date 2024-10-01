@@ -5,16 +5,15 @@ import {
     loginUser,
     logoutUser,
     otpverification,
-    registerUser,
+    registerUserRequest,
     updateAccountDetails,
 } from "../controllers/user.controller.js";
-// import { upload } from "../middlewares/multer.middlewares.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.post("/register", registerUser);
-router.post('/login/verify-otp' , otpverification)
+router.post("/user-request" , registerUserRequest) ; 
+router.post('/user-request/verifyOtp' , otpverification)
 router.post("/login", loginUser);
 router.post("/logout", verifyToken, logoutUser);
 router.post("/change-password", verifyToken, changePassword);

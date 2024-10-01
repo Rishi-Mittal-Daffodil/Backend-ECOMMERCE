@@ -2,69 +2,64 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
-import { OTP } from "../models/otp.model.js";
-// import jwt from "jsonwebtoken";
+import { UserRequest } from "../models/userrequest.model.js";
 import nodemailer from "nodemailer";
 import otpGenerator from "otp-generator";
 
 //genrating access and refresh token .
-const generateResetToken = async (userId) => {
+const generateRefreshToken = async (userId) => {
     const user = await User.findById(userId);
-    const resetToken = user.generateResetToken();
-    user.resetToken = resetToken;
+    const refreshToken = user.generateRefreshToken();
+    user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
-    if (!resetToken)
+    if (!refreshToken)
         throw new ApiError(
-            "something went wrong while generating  access and refresh token "
+            "something went wrong while generating refresh token "
         );
-    return { resetToken };
+    return { refreshToken };
 };
 
 //registering user .
-const registerUser = asyncHandler(async (req, res) => {
-    const { firstName, lastName, email, password, role, phone, address } =
-        req.body;
+const registerUserRequest = asyncHandler(async (req, res) => {
+    const { firstName, lastName, email, password } = req.body;
     if (firstName === "") throw new ApiError(400, "Please Enter firstName");
-    else if (lastName === "") throw new ApiError(400, "Please enter lastName");
     else if (email === "") throw new ApiError(400, "Please enter email");
     else if (password === "") throw new ApiError(400, "please enter password");
 
     const existedUser = await User.findOne({ email });
-    if (existedUser) throw new ApiError(409, "user already exist");
+    const deletedUserFromUserRequest =  await UserRequest.deleteMany({email:email})
+    if (existedUser) new ApiResponse(200, {}, "user with this email already exists");
 
-    const user = await User.create({
+    const otp = await sendOTP(email);
+    if (!otp) throw new ApiError(401, "Error occure while sending otp");
+
+    const user = await UserRequest.create({
         firstName,
-        lastName,
+        lastName : lastName || "",
         email: email,
         password,
-        role: role || "customer",
-        phone: phone || "",
-        address: address || {},
+        otp: otp,
+        otpExpirationTime: Date.now() + 5 * 60 * 1000,
     });
 
-    const createdUser = await User.findById(user._id).select(
-        "-password -resetToken"
+    const requestUser = await UserRequest.findById(user._id).select(
+        "-password "
     );
-    if (!createdUser)
+
+    if (!requestUser)
         throw new ApiError(
             500,
             "Something went wrong while registering the user "
         );
-    const isOtpSend = await sendOTP(email);
-    if (!isOtpSend) throw new ApiError(401, "Error occure while sending otp");
 
     return res
         .status(201)
         .json(
-            new ApiResponse(200, createdUser, "User registered Successfully")
+            new ApiResponse(200, requestUser, "Request Created Successfully")
         );
 });
 
 //email verification
-//first create otp-verification function .
-// after creating otp user verify that using verify-otp route .
-// once otp verify then i create refresh-token and verify token .
-
 const sendOTP = async (email) => {
     const otp = otpGenerator.generate(6, {
         digits: true,
@@ -73,9 +68,6 @@ const sendOTP = async (email) => {
         specialChars: false,
     });
     try {
-        const otpmodel = await OTP.create({ email: email, otp: otp });
-        if (!otpmodel)
-            throw new ApiError(400, "error occure while creating otp model . ");
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
@@ -90,44 +82,43 @@ const sendOTP = async (email) => {
             text: `Your OTP for verification is: ${otp}`,
         });
         console.log(emailres);
-        return true;
+        return otp;
     } catch (e) {
-        await OTP.findOneAndDelete({ email, otp });
         console.log(e);
-        return false;
+        return null;
     }
 };
 
 const otpverification = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
-
-    if (!email || !otp)
+    if (!email || !otp )
         throw new ApiError(400, "please enter valid otp Or email ");
-
     try {
-        const user = await User.findOne({ email: email });
+        console.log(email);
+        const user = await UserRequest.findOne({ email });
         if (!user) throw new ApiError(400, "email id not exist ");
-        const otpRecord = await OTP.findOneAndDelete({ email, otp });
-        if (!otpRecord)
-            return res.status(400).send("Invalid OTP Resend Otp now ");
-        const { resetToken } = await generateResetToken(user._id);
-        const loggedInUser = await User.findById(user._id).select(
-            "-password -resetToken"
+        const { firstName, lastName, password } = user;
+
+        if (!(user.otp === otp)) {
+            res.status(400).json({
+                message: "otp is invalid ",
+            });
+        }
+
+        const originalUser = await User.create({
+            firstName,
+            lastName : lastName || "",
+            email,
+            password,
+        });
+        await UserRequest.deleteOne({ _id: user._id });
+
+        const createdUser = await User.findOne({
+            _id: originalUser._id,
+        }).select("-password");
+        res.status(200).json(
+            new ApiResponse(200, createdUser, "user created successfully")
         );
-
-        const options = {
-            httpOnly: true,
-            secure: true,
-        };
-
-        res.status(200)
-            .cookie("resetToken", resetToken, options)
-            .json(
-                new ApiResponse(200, {
-                    user: loggedInUser,
-                    resetToken,
-                })
-            );
     } catch (error) {
         console.log(error);
         return false;
@@ -145,21 +136,37 @@ const loginUser = asyncHandler(async (req, res) => {
     if (!user) throw new ApiError(404, "user not Exist");
 
     const isPassword = await user.isPasswordCorrect(password);
-    if (!isPassword) throw new ApiError(401, "Please Enter Valid Credentials");
+    if (!isPassword) {
+        res.status(400).json({
+            message: "user not found",
+        });
+    }
 
-    const isOtpSend = await sendOTP(email);
-    if (!isOtpSend) throw new ApiError(401, "Error occure while sending otp");
+    const { refreshToken } = await generateRefreshToken(user._id);
+    const loggedInUser = await User.findById(user._id).select(
+        "-password -refreshToken"
+    );
 
-    return res
-        .status(200)
-        .send("password is correct now proceed to otp verification");
+    const options = {
+        httpOnly: true,
+        secure: true,
+    };
+
+    res.status(200)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(200, {
+                user: loggedInUser,
+                refreshToken,
+            })
+        );
 });
 
 //logout user  .
 const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(req.user?._id, {
         $unset: {
-            resetToken: 1,
+            refreshToken: 1,
         },
     });
 
@@ -170,12 +177,11 @@ const logoutUser = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .clearCookie("resetToken", options)
+        .clearCookie("refreshToken", options)
         .json(new ApiResponse(200, {}, "user logged out successfuly"));
 });
 
 //change password
-
 const changePassword = asyncHandler(async (req, res) => {
     const { currPassword, newPassword } = req.body;
 
@@ -232,7 +238,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 export {
-    registerUser,
+    registerUserRequest,
     loginUser,
     logoutUser,
     changePassword,
