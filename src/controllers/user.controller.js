@@ -60,10 +60,6 @@ const registerUserRequest = asyncHandler(async (req, res) => {
 });
 
 //email verification
-//first create otp-verification function .
-// after creating otp user verify that using verify-otp route .
-// once otp verify then i create refresh-token and verify token .
-
 const sendOTP = async (email) => {
     const otp = otpGenerator.generate(6, {
         digits: true,

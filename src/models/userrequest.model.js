@@ -4,7 +4,7 @@ import bcryptjs from "bcryptjs";
 const userRequestSchema = new mongoose.Schema(
     {
         firstName: { type: String, required: true, trim: true },
-        lastName: { type: String,  trim: true },
+        lastName: { type: String, trim: true },
         email: {
             type: String,
             required: true,
@@ -18,7 +18,6 @@ const userRequestSchema = new mongoose.Schema(
         },
         otpExpirationTime: {
             type: Date,
-
         },
     },
     { timestamps: true }

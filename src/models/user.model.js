@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 const userSchema = new mongoose.Schema(
     {
         firstName: { type: String, required: true, trim: true },
-        lastName: { type: String,  trim: true },
+        lastName: { type: String, trim: true },
         email: {
             type: String,
             required: true,
@@ -38,7 +38,6 @@ const userSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
-
 
 userSchema.methods.isPasswordCorrect = async function (password) {
     console.log("ispaass" + this.password);
