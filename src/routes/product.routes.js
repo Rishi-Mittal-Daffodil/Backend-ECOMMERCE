@@ -7,7 +7,8 @@ import {
   deleteProduct,
   updateProduct,
   togglePublishStatus,
-} from "../controllers/Product.controller.js";
+} from "../controllers/product.controller.js";
+import { Product } from "../models/product.model.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 
 const router = Router();
@@ -16,7 +17,7 @@ router.use(verifyToken); // Apply verifyJWT middleware to all routes in this fil
 
 router
   .route("/")
-  .get(getAllProducts)
+  .get(getAllProducts) //hasRequiredRightmoDEL({method: GET , models: PRODUCT, CUSTOM: FAV}
   .post(upload.fields([
     {
       name :  'images' , 
