@@ -1,5 +1,4 @@
-import mongoose, {isValidObjectId} from "mongoose"
-import {Product} from "../models/Product.model.js"
+import {Product} from "../models/product.model.js"
 import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
@@ -20,9 +19,9 @@ const publishAProduct = asyncHandler(async (req, res) => {
     // if(!title) throw new ApiError(400 , "title should be given");
     // if(!description) throw new ApiError(400 , "description should be given");
     // if(!category) throw new ApiError(400  , "category should be given ")
-    console.log('helloo');
-    const localProductPath = req.files?.ProductFile[0]?.path ; 
-    console.log(localProductPath);
+    // console.log('helloo');
+    // const localProductPath = req.files?.ProductFile[0]?.path ; 
+    // console.log(localProductPath);
     // const localThumbnailPath =  req.files?.thumbnail[0]?.path ;  
 
     // if(!localProductPath) throw new ApiError(400 , "Please provide a Product ")

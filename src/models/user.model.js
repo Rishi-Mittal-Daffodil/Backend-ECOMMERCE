@@ -1,6 +1,5 @@
 import mongoose, { Schema } from "mongoose";
 import bcryptjs from "bcryptjs";
-import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
     {
@@ -45,30 +44,5 @@ userSchema.methods.isPasswordCorrect = async function (password) {
     return bcryptjs.compareSync(password, this.password);
 };
 
-userSchema.methods.generateRefreshToken = function () {
-    return jwt.sign(
-        {
-            _id: this._id,
-        },
-        process.env.RESET_TOKEN_SECRET,
-        { expiresIn: process.env.RESET_TOKEN_EXPIRY }
-    );
-};
 
 export const User = mongoose.model("User", userSchema);
-
-// {
-//     "firstName" :  "rishi" ,
-//     "lastName" : "mittal" ,
-//     "email" : "rishimittal676@gmial.com" ,
-//     "password" : "Rishi@@123" ,
-//     "role" : "admin" ,
-//     "phone" : "12345678" ,
-//     "address" : {
-//         "street": "street1",
-//         "city": "city1",
-//         "state": "state1",
-//         "postalCode": "postalCode1",
-//         "country": "india"
-//     }
-// }
