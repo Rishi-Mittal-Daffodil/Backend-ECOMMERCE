@@ -100,7 +100,7 @@ const sendOTP = async (email) => {
 
 const otpverification = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
-    if (!email || !otp)
+    if (!email || !otp || (typeof email === typeof({})))
         throw new ApiError(400, "please enter valid otp Or email ");
     try {
         console.log(email);

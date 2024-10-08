@@ -5,13 +5,14 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Category } from "../models/category.model.js";
 
 const createCategory = asyncHandler(async (req, res) => {
-    const { firstLevelCategory} =
-        req.body;
+    const {firstLevelCategory , secondLevelCategory , thirdLevelCategory} = req.body;
     if (!firstLevelCategory) {
         throw new ApiError("please insert all the categories");
     }
     const obj = {
         firstLevelCategory,
+        secondLevelCategory ,
+        thirdLevelCategory
     };
     const category = await Category.create(obj);
     if (!category)

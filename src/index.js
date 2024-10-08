@@ -12,8 +12,8 @@ dotenv.config({
     path: "./.env",
 });
 const limiter = rateLimit({
-    windowMs: 10 * 60 * 1000, // 10 minutes
-    limit: 100,
+    windowMs: 5 * 60 * 1000, // 10 minutes
+    limit: 1000,
     standardHeaders: "draft-7",
     legacyHeaders: false,
 });
