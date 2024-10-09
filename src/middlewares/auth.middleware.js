@@ -17,7 +17,7 @@ const verifyToken = asyncHandler(async (req, _ , next) => {
       "-password -refreshToken"
     );
 
-    if (!user) throw new ApiError("user is not valid");
+    if (!user) throw new ApiError("user is not valid"); // UNAUTH ERROR CODE
 
     req.user = user;
     next();

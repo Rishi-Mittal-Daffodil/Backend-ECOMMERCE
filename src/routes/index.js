@@ -21,6 +21,7 @@ const routes = [
         path: "/pm/product",
         router: productRoutes,
     },
+    //not found route
 ];
 
 routes.forEach((route) => {
