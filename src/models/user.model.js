@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from "mongoose";
 import bcryptjs from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
@@ -39,10 +39,9 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.methods.isPasswordCorrect = async function (password) {
-    console.log("ispaass" + this.password);
+    // console.log("ispaass" + this.password);
 
     return bcryptjs.compareSync(password, this.password);
 };
-
 
 export const User = mongoose.model("User", userSchema);

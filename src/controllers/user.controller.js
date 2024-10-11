@@ -7,6 +7,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { UserRequest } from "../models/userrequest.model.js";
 import { EMAIL_FROM } from "../config/constants.js";
+import { Wishlist } from "../models/wishlist.model.js";
 
 //genrating access and refresh token .
 const generateRefreshToken = async (userId) => {
@@ -40,7 +41,7 @@ const registerUserRequest = asyncHandler(async (req, res) => {
         new ApiResponse(200, {}, "user with this email already exists");
 
     const otp = await sendOTP(email);
-    if (!otp) throw new ApiError(401, "Error occure while sending otp");
+    if (!otp) throw new ApiError(401, "Error occurs while sending otp");
 
     const user = await UserRequest.create({
         firstName,
@@ -100,7 +101,7 @@ const sendOTP = async (email) => {
 
 const otpverification = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
-    if (!email || !otp || (typeof email === typeof({})))
+    if (!email || !otp || typeof email === typeof {})
         throw new ApiError(400, "please enter valid otp Or email ");
     try {
         console.log(email);
@@ -158,6 +159,8 @@ const loginUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: true,
         secure: true,
+        maxAge: 60 * 60 * 24 * 30 * 1000,
+        sameSite: "none",
     };
 
     res.status(200)
@@ -186,7 +189,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .clearCookie("refreshToken", options)
-        .json(new ApiResponse(200, {}, "user logged out successfuly"));
+        .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
 
 //change password
@@ -206,7 +209,7 @@ const changePassword = asyncHandler(async (req, res) => {
 
     return res
         .status(201)
-        .json(new ApiError(200, {}, "Password Changed Sucessfully"));
+        .json(new ApiError(200, {}, "Password Changed Successfully"));
 });
 
 //to return the current user
@@ -245,6 +248,26 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     );
 });
 
+const deleteAccount = asyncHandler(async (req, res) => {
+    try {
+        const id = req?.user?._id;
+        if (!id)
+            throw new ApiError(400, "Error Occurs while deleting account ");
+        const user = await User.findByIdAndDelete(id);
+        if (!user)
+            throw new ApiError(400, "Error Occurs While deleting account ");
+        const options = {
+            httpOnly: true,
+            secure: true,
+        };
+        res.status(200)
+            .clearCookie("refreshToken", options)
+            .json(new ApiResponse(200, user, "Account Deleted Successfully"));
+    } catch (error) {
+        throw new ApiError(400, error);
+    }
+});
+
 const checkStatus = asyncHandler((req, res) => {
     const user = req?.user;
     if (!user) {
@@ -263,5 +286,6 @@ export {
     getCurrentUser,
     updateAccountDetails,
     otpverification,
+    deleteAccount,
     checkStatus,
 };

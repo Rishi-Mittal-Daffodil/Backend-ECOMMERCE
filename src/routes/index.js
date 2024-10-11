@@ -4,9 +4,10 @@ import userRoutes from "./user.routes.js";
 import categoryRoutes from "./category.routes.js";
 import productRoutes from "./product.routes.js";
 import userRequestRoutes from "./userrequest.routes.js";
+import wishlistRoutes from "./wishlist.routes.js";
 const routes = [
     {
-        path: "/um",
+        path: "/um/user",
         router: userRoutes,
     },
     {
@@ -20,6 +21,10 @@ const routes = [
     {
         path: "/pm/product",
         router: productRoutes,
+    },
+    {
+        path: "/um/wishlist",
+        router: wishlistRoutes,
     },
     //not found route
 ];

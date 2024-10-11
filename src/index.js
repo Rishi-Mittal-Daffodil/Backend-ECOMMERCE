@@ -6,6 +6,8 @@ import { rateLimit } from "express-rate-limit";
 import routes from "./routes/index.js";
 import mongoose from "mongoose";
 import { DB_NAME } from "./config/constants.js";
+import morgan from 'morgan' ; 
+
 
 const app = express();
 dotenv.config({
@@ -19,9 +21,10 @@ const limiter = rateLimit({
 });
 
 //middlewares
+app.use(morgan('common'))
 app.use(
     cors({
-        origin: process.env.CORS_ORIGIN,
+        origin:'http://localhost:5173',
         credentials: true,
     })
 );

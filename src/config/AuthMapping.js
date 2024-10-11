@@ -36,7 +36,6 @@
 //     createProduct: 1
 // }
 
-
 // const USER = {
 //     viewPRoduct: 1,
 //     createProduct: 1,

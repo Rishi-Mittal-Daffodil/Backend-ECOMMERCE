@@ -5,18 +5,19 @@ import {
     loginUser,
     logoutUser,
     updateAccountDetails,
-    checkStatus
+    checkStatus,
+    deleteAccount,
 } from "../controllers/user.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.post('/user/verified-check' , verifyToken , checkStatus) ; // see that 
+router.post("/verified-check", verifyToken, checkStatus); // see that
 router.post("/login", loginUser);
 router.post("/logout", verifyToken, logoutUser);
 router.post("/change-password", verifyToken, changePassword);
 router.get("/current-user", verifyToken, getCurrentUser);
+router.delete("/delete-account", verifyToken, deleteAccount);
 router.patch("/update-account", verifyToken, updateAccountDetails);
 
 export default router;
-
