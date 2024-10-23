@@ -23,7 +23,7 @@ const limiter = rateLimit({
 app.use(morgan("common"));
 app.use(
     cors({
-        origin: "https://trendify1.netlify.app",
+        origin: process.env.CORS_ORIGIN , 
         credentials: true,
     })
 );
