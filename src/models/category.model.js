@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 
-const categorySchema = new Schema(
+const categorySchema = new mongoose.Schema(
     {
-        name: { type: String, required: true, trim: true },
-        createdAt: { type: Date, default: Date.now },
-        updatedAt: { type: Date, default: Date.now },
+        firstLevelCategory: { type: String, required: true, trim: true },
+        secondLevelCategory: { type: String, required: true, trim: true },
+        thirdLevelCategory: { type: String, required: true, trim: true },
     },
     { timestamps: true }
 );
+
+export const Category = mongoose.model("Category", categorySchema);

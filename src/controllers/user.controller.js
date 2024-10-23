@@ -1,15 +1,25 @@
+import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import otpGenerator from "otp-generator";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { UserRequest } from "../models/userrequest.model.js";
-import nodemailer from "nodemailer";
-import otpGenerator from "otp-generator";
+import { EMAIL_FROM } from "../config/constants.js";
+import { Wishlist } from "../models/wishlist.model.js";
+import { Cart } from "../models/cart.model.js";
 
 //genrating access and refresh token .
 const generateRefreshToken = async (userId) => {
     const user = await User.findById(userId);
-    const refreshToken = user.generateRefreshToken();
+    const refreshToken = jwt.sign(
+        {
+            _id: user._id,
+        },
+        process.env.RESET_TOKEN_SECRET,
+        { expiresIn: process.env.RESET_TOKEN_EXPIRY }
+    );
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
     if (!refreshToken)
@@ -27,15 +37,16 @@ const registerUserRequest = asyncHandler(async (req, res) => {
     else if (password === "") throw new ApiError(400, "please enter password");
 
     const existedUser = await User.findOne({ email });
-    const deletedUserFromUserRequest =  await UserRequest.deleteMany({email:email})
-    if (existedUser) new ApiResponse(200, {}, "user with this email already exists");
+    await UserRequest.deleteMany({ email: email }); //deleting existing user in user-request  .
+    if (existedUser)
+        new ApiResponse(200, {}, "user with this email already exists");
 
     const otp = await sendOTP(email);
-    if (!otp) throw new ApiError(401, "Error occure while sending otp");
+    if (!otp) throw new ApiError(401, "Error occurs while sending otp");
 
     const user = await UserRequest.create({
         firstName,
-        lastName : lastName || "",
+        lastName: lastName || "",
         email: email,
         password,
         otp: otp,
@@ -71,12 +82,12 @@ const sendOTP = async (email) => {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: "rishimittal283110@gmail.com",
+                user: EMAIL_FROM,
                 pass: "gbncthgcfnkdwspq",
             },
         });
         const emailres = await transporter.sendMail({
-            from: "rishimittal283110@gmail.com",
+            from: EMAIL_FROM,
             to: email,
             subject: "OTP Verification",
             text: `Your OTP for verification is: ${otp}`,
@@ -91,23 +102,28 @@ const sendOTP = async (email) => {
 
 const otpverification = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
-    if (!email || !otp )
+    if (!email || !otp || typeof email === typeof {})
         throw new ApiError(400, "please enter valid otp Or email ");
     try {
         console.log(email);
         const user = await UserRequest.findOne({ email });
         if (!user) throw new ApiError(400, "email id not exist ");
+        const users = await User.findOne({ email });
+        if (users) {
+            return res.status(400).send({ message: "User Already registred" });
+        }
         const { firstName, lastName, password } = user;
 
         if (!(user.otp === otp)) {
             res.status(400).json({
                 message: "otp is invalid ",
             });
+            return;
         }
 
         const originalUser = await User.create({
             firstName,
-            lastName : lastName || "",
+            lastName: lastName || "",
             email,
             password,
         });
@@ -137,22 +153,23 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const isPassword = await user.isPasswordCorrect(password);
     if (!isPassword) {
-        res.status(400).json({
+        return res.status(400).json({
             message: "user not found",
         });
     }
 
     const { refreshToken } = await generateRefreshToken(user._id);
-    const loggedInUser = await User.findById(user._id).select(
-        "-password -refreshToken"
-    );
+    const loggedInUser = await User.findById(user._id).select("-password ");
 
     const options = {
         httpOnly: true,
         secure: true,
+        maxAge: 60 * 60 * 24 * 30 * 1000,
+        sameSite: "none",
     };
 
-    res.status(200)
+    return res
+        .status(200)
         .cookie("refreshToken", refreshToken, options)
         .json(
             new ApiResponse(200, {
@@ -178,7 +195,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .clearCookie("refreshToken", options)
-        .json(new ApiResponse(200, {}, "user logged out successfuly"));
+        .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
 
 //change password
@@ -198,7 +215,7 @@ const changePassword = asyncHandler(async (req, res) => {
 
     return res
         .status(201)
-        .json(new ApiError(200, {}, "Password Changed Sucessfully"));
+        .json(new ApiError(200, {}, "Password Changed Successfully"));
 });
 
 //to return the current user
@@ -237,6 +254,66 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     );
 });
 
+// const updateAddress =  asyncHandler(async (req , res)=>{
+//     const id = req?.user?._id;
+//     try {
+//         const {}
+
+//     } catch (error) {
+//         throw new ApiError(400, error);
+//     }
+// })
+
+const getDetails = asyncHandler(async (req, res) => {
+    const userId = req?.user?._id;
+    try {
+        const wishlist= await Wishlist.find({ reference: userId });
+        let cartPresent = await Cart.findOne({ user: userId });
+        if (!wishlist || !cartPresent)
+            throw new ApiError(400, "not able get details ");
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, {
+                    cartlen: cartPresent.items.length,
+                    wishlistlen: wishlist.length,
+                })
+            );
+    } catch (error) {
+        throw new ApiError(400 , error)
+    }
+});
+
+const deleteAccount = asyncHandler(async (req, res) => {
+    try {
+        const id = req?.user?._id;
+        if (!id)
+            throw new ApiError(400, "Error Occurs while deleting account ");
+        const user = await User.findByIdAndDelete(id);
+        if (!user)
+            throw new ApiError(400, "Error Occurs While deleting account ");
+        const options = {
+            httpOnly: true,
+            secure: true,
+        };
+        res.status(200)
+            .clearCookie("refreshToken", options)
+            .json(new ApiResponse(200, user, "Account Deleted Successfully"));
+    } catch (error) {
+        throw new ApiError(400, error);
+    }
+});
+
+const checkStatus = asyncHandler((req, res) => {
+    const user = req?.user;
+    if (!user) {
+        res.status(400).message(
+            "not Authorized person person for this task . "
+        );
+    }
+    res.status(200).json(user);
+});
+
 export {
     registerUserRequest,
     loginUser,
@@ -245,4 +322,7 @@ export {
     getCurrentUser,
     updateAccountDetails,
     otpverification,
+    deleteAccount,
+    checkStatus,
+    getDetails
 };

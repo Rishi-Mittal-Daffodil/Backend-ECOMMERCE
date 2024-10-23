@@ -12,18 +12,15 @@ const uploadOnCloudinary = async (localFilePath) => {
         console.log("ghjkl", localFilePath);
 
         if (!localFilePath) return null;
-        //upload file on cloudinary .
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto",
         });
         console.log(response);
 
         console.log("file has been upload sucessfully ", response.url);
-        // we have to unlink the local file path here also .
         fs.unlinkSync(localFilePath);
         return response;
     } catch (error) {
-        // if file uploading failed so we have to localfilepath .
         console.log(error);
 
         fs.unlinkSync(localFilePath);
@@ -31,4 +28,15 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 };
 
-export { uploadOnCloudinary };
+const deleteOnCloudinary = async (arr) => {
+    try {
+        const res = await cloudinary.api.delete_resources(arr);
+        console.log(res, "images deleted successfully");
+        return true;
+    } catch (error) {
+        throw new ApiError(400, error);
+        return false;
+    }
+};
+
+export { uploadOnCloudinary, deleteOnCloudinary };
