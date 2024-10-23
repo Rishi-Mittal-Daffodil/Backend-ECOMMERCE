@@ -14,23 +14,24 @@ const addWishlistProduct = asyncHandler(async (req, res) => {
             if (!wishlistItem?.reference?.includes(userId)) {
                 wishlistItem.reference.push(userId);
                 await wishlistItem.save();
-                res.status(200).json(
-                    new ApiResponse(
-                        200,
-                        wishlistItem,
-                        "User added to the existing wishlist product."
-                    )
-                );
+                return res
+                    .status(200)
+                    .json(
+                        new ApiResponse(
+                            200,
+                            wishlistItem,
+                            "User added to the existing wishlist product."
+                        )
+                    );
             } else {
-                throw new ApiError(
-                    400,
-                    "User is already associated with this wishlist product."
-                );
+                return res.status(200).json(new ApiResponse(200 , "user already associate with this product ")) ; 
             }
         }
-        res.status(200).json(
-            new ApiResponse(200, {}, "item added to wishlist successfully")
-        );
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, {}, "item added to wishlist successfully")
+            );
     } catch (error) {
         throw new ApiError(400, error);
     }
@@ -48,9 +49,9 @@ const getWishListItems = asyncHandler(async (req, res) => {
                 "Error occure while fetching wishlist from database"
             );
         const data = wishlists.map((wishlist) => wishlist.product); // Return the list of products for the user
-        res.status(200).json(
-            new ApiResponse(200, data, "Wishlist fetched successfully")
-        );
+        return res
+            .status(200)
+            .json(new ApiResponse(200, data, "Wishlist fetched successfully"));
     } catch (error) {
         throw new ApiError(400, error);
     }
@@ -89,4 +90,24 @@ const updateWishlistProduct = asyncHandler(async (req, res) => {
     }
 });
 
-export { getWishListItems, addWishlistProduct, updateWishlistProduct };
+const isProductAddedInWishlist = asyncHandler(async (req, res) => {
+    const userId = req.user?._id;
+    if (!userId) return res.json({isAdded :  false }) ; 
+    const { productId } = req.params;
+    if (!productId) return;
+    try {
+        let wishlistItem = await Wishlist.findOne({ product: productId });
+        if (!wishlistItem) throw new ApiError(400, "no wishlist item found ");
+        if (wishlistItem?.reference?.includes(userId)) {
+            return res.status(200).json({isAdded :  true}) ; 
+        }
+        else{
+            return res.json({isAdded :  false }) ; 
+        }
+        // return res.json(400).json(new ApiResponse(400 , {isAdded :  null} ,  "something went wrong while fetch isAddedWishlist")) ; 
+    } catch (error) {
+        throw new ApiError(400, error);
+    }
+});
+
+export { getWishListItems, addWishlistProduct, updateWishlistProduct , isProductAddedInWishlist };

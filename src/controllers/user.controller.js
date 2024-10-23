@@ -8,6 +8,7 @@ import { User } from "../models/user.model.js";
 import { UserRequest } from "../models/userrequest.model.js";
 import { EMAIL_FROM } from "../config/constants.js";
 import { Wishlist } from "../models/wishlist.model.js";
+import { Cart } from "../models/cart.model.js";
 
 //genrating access and refresh token .
 const generateRefreshToken = async (userId) => {
@@ -107,6 +108,10 @@ const otpverification = asyncHandler(async (req, res) => {
         console.log(email);
         const user = await UserRequest.findOne({ email });
         if (!user) throw new ApiError(400, "email id not exist ");
+        const users = await User.findOne({ email });
+        if (users) {
+            return res.status(400).send({ message: "User Already registred" });
+        }
         const { firstName, lastName, password } = user;
 
         if (!(user.otp === otp)) {
@@ -148,7 +153,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const isPassword = await user.isPasswordCorrect(password);
     if (!isPassword) {
-        res.status(400).json({
+        return res.status(400).json({
             message: "user not found",
         });
     }
@@ -163,7 +168,8 @@ const loginUser = asyncHandler(async (req, res) => {
         sameSite: "none",
     };
 
-    res.status(200)
+    return res
+        .status(200)
         .cookie("refreshToken", refreshToken, options)
         .json(
             new ApiResponse(200, {
@@ -248,6 +254,36 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     );
 });
 
+// const updateAddress =  asyncHandler(async (req , res)=>{
+//     const id = req?.user?._id;
+//     try {
+//         const {}
+
+//     } catch (error) {
+//         throw new ApiError(400, error);
+//     }
+// })
+
+const getDetails = asyncHandler(async (req, res) => {
+    const userId = req?.user?._id;
+    try {
+        const wishlist= await Wishlist.find({ reference: userId });
+        let cartPresent = await Cart.findOne({ user: userId });
+        if (!wishlist || !cartPresent)
+            throw new ApiError(400, "not able get details ");
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, {
+                    cartlen: cartPresent.items.length,
+                    wishlistlen: wishlist.length,
+                })
+            );
+    } catch (error) {
+        throw new ApiError(400 , error)
+    }
+});
+
 const deleteAccount = asyncHandler(async (req, res) => {
     try {
         const id = req?.user?._id;
@@ -288,4 +324,5 @@ export {
     otpverification,
     deleteAccount,
     checkStatus,
+    getDetails
 };

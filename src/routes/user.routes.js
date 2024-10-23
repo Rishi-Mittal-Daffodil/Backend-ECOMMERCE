@@ -7,6 +7,7 @@ import {
     updateAccountDetails,
     checkStatus,
     deleteAccount,
+    getDetails
 } from "../controllers/user.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -19,5 +20,6 @@ router.post("/change-password", verifyToken, changePassword);
 router.get("/current-user", verifyToken, getCurrentUser);
 router.delete("/delete-account", verifyToken, deleteAccount);
 router.patch("/update-account", verifyToken, updateAccountDetails);
+router.get("/get-details" , verifyToken , getDetails )
 
 export default router;
