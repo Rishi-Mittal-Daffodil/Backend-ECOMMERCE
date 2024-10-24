@@ -24,7 +24,7 @@ const addWishlistProduct = asyncHandler(async (req, res) => {
                         )
                     );
             } else {
-                return res.status(200).json(new ApiResponse(200 , "user already associate with this product ")) ; 
+                throw new ApiError(400 , "wishlist already added in wishlist") ;  
             }
         }
         return res
