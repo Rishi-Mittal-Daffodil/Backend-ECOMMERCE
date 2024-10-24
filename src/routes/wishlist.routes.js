@@ -12,7 +12,7 @@ const router = Router();
 router.route("/").get(verifyToken  ,getWishListItems);
 router
     .route("/:productId")
-    .get(verifyToken , isProductAddedInWishlist)
+    .get(isProductAddedInWishlist)
     .post(verifyToken , addWishlistProduct)
     .patch(verifyToken , updateWishlistProduct);
 

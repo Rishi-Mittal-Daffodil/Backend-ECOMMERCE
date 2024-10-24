@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Wishlist } from "../models/wishlist.model.js";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
+import { CartItem } from "../models/cart.model.js";
 
 const getAllProducts = asyncHandler(async (req, res) => {
     // const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
@@ -207,6 +208,8 @@ const deleteProduct = asyncHandler(async (req, res) => {
     try {
         const { productId } = req.params;
         const product = await Product.findByIdAndDelete(productId);
+        await  CartItem.findByIdAndDelete(productId) ; 
+        
         const imagesUrl = [];
         for (let image of product.images)
             imagesUrl.push(image.url.split("/").pop().split(".")[0]);
