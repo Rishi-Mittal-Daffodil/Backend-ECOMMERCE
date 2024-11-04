@@ -24,7 +24,7 @@ app.use(morgan("common"));
 const allowedOrigins = process.env.CORS_ORIGIN.split(',');
 app.use(
     cors({
-        origin: 'https://trendify1.netlify.app',
+        origin: 'http://localhost:5173',
         credentials: true,
     })
 );
