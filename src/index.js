@@ -9,9 +9,7 @@ import { DB_NAME } from "./config/constants.js";
 import morgan from "morgan";
 
 const app = express();
-dotenv.config({
-    path: "./.env",
-});
+dotenv.config();
 const limiter = rateLimit({
     windowMs: 5 * 60 * 1000, // 10 minutes
     limit: 1000,
@@ -24,7 +22,7 @@ app.use(morgan("common"));
 const allowedOrigins = process.env.CORS_ORIGIN.split(',');
 app.use(
     cors({
-        origin: 'https://trendify1.netlify.app',
+        origin: 'http://localhost:5173',
         credentials: true,
     })
 );
