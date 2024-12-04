@@ -40,7 +40,7 @@ const DB_CONNECT = async () => {
             `${process.env.DB_URI}/${DB_NAME}`
         );
         console.log(
-            "DB Connected SucessFully ",
+            "DB Connected SucessFully",
             instanceConnection.connection.host
         );
     } catch (err) {
